@@ -1,6 +1,6 @@
 module github.com/sipeed/picoclaw
 
-go 1.25.7
+go 1.25.6
 
 require (
 	github.com/adhocore/gronx v1.19.6
@@ -18,8 +18,6 @@ require (
 	github.com/tencent-connect/botgo v0.2.1
 	golang.org/x/oauth2 v0.35.0
 )
-
-
 
 require (
 	github.com/andybalholm/brotli v1.2.0 // indirect
@@ -47,5 +45,4 @@ require (
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
-
 )
