@@ -10,12 +10,12 @@ Information about user goes here.
 
 ## Personal Information
 
-- Name: (optional)
-- Location: (optional)
-- Occupation: (optional)
+- Name: Admin
+- Location: Paris, France
+- Occupation: Data Scientist
 
 ## Learning Goals
 
-- What the user wants to learn from AI
-- Preferred interaction style
-- Areas of interest
+- Automating data workflows
+- Server management and optimization
+- Python scripting and efficient tooling

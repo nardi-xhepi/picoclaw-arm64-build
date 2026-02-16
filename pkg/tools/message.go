@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-type SendCallback func(channel, chatID, content string) error
+type SendCallback func(channel, chatID, content string, media []string) error
 
 type MessageTool struct {
 	sendCallback   SendCallback
@@ -41,6 +41,13 @@ func (t *MessageTool) Parameters() map[string]interface{} {
 			"chat_id": map[string]interface{}{
 				"type":        "string",
 				"description": "Optional: target chat/user ID",
+			},
+			"media": map[string]interface{}{
+				"type":        "array",
+				"description": "Optional: list of file paths to send as attachments (images, etc.)",
+				"items": map[string]interface{}{
+					"type": "string",
+				},
 			},
 		},
 		"required": []string{"content"},
@@ -82,11 +89,20 @@ func (t *MessageTool) Execute(ctx context.Context, args map[string]interface{}) 
 		return &ToolResult{ForLLM: "No target channel/chat specified", IsError: true}
 	}
 
+	var media []string
+	if mediaArgs, ok := args["media"].([]interface{}); ok {
+		for _, m := range mediaArgs {
+			if s, ok := m.(string); ok {
+				media = append(media, s)
+			}
+		}
+	}
+
 	if t.sendCallback == nil {
 		return &ToolResult{ForLLM: "Message sending not configured", IsError: true}
 	}
 
-	if err := t.sendCallback(channel, chatID, content); err != nil {
+	if err := t.sendCallback(channel, chatID, content, media); err != nil {
 		return &ToolResult{
 			ForLLM:  fmt.Sprintf("sending message: %v", err),
 			IsError: true,

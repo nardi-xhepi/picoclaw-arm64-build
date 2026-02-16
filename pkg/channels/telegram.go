@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -140,27 +141,69 @@ func (c *TelegramChannel) Send(ctx context.Context, msg bus.OutboundMessage) err
 	htmlContent := markdownToTelegramHTML(msg.Content)
 
 	// Try to edit placeholder
+	var sentMsg *telego.Message
 	if pID, ok := c.placeholders.Load(msg.ChatID); ok {
 		c.placeholders.Delete(msg.ChatID)
 		editMsg := tu.EditMessageText(tu.ID(chatID), pID.(int), htmlContent)
 		editMsg.ParseMode = telego.ModeHTML
 
-		if _, err = c.bot.EditMessageText(ctx, editMsg); err == nil {
-			return nil
+		if msg, err := c.bot.EditMessageText(ctx, editMsg); err == nil {
+			sentMsg = msg
+		} else {
+			// Fallback to new message if edit fails
+			// existing sentMsg remains nil, handled below
 		}
-		// Fallback to new message if edit fails
 	}
 
-	tgMsg := tu.Message(tu.ID(chatID), htmlContent)
-	tgMsg.ParseMode = telego.ModeHTML
+	if sentMsg == nil {
+		tgMsg := tu.Message(tu.ID(chatID), htmlContent)
+		tgMsg.ParseMode = telego.ModeHTML
 
-	if _, err = c.bot.SendMessage(ctx, tgMsg); err != nil {
-		logger.ErrorCF("telegram", "HTML parse failed, falling back to plain text", map[string]interface{}{
-			"error": err.Error(),
-		})
-		tgMsg.ParseMode = ""
-		_, err = c.bot.SendMessage(ctx, tgMsg)
-		return err
+		if msg, err := c.bot.SendMessage(ctx, tgMsg); err != nil {
+			logger.ErrorCF("telegram", "HTML parse failed, falling back to plain text", map[string]interface{}{
+				"error": err.Error(),
+			})
+			tgMsg.ParseMode = ""
+			if msg, err := c.bot.SendMessage(ctx, tgMsg); err != nil {
+				return err
+			} else {
+				sentMsg = msg
+			}
+		} else {
+			sentMsg = msg
+		}
+	}
+
+	// Send Media
+	if len(msg.Media) > 0 {
+		for _, filePath := range msg.Media {
+			f, err := os.Open(filePath)
+			if err != nil {
+				logger.ErrorCF("telegram", "Failed to open media file", map[string]interface{}{"path": filePath, "error": err.Error()})
+				continue
+			}
+
+			ext := strings.ToLower(filepath.Ext(filePath))
+			inputFile := tu.File(f)
+
+			var mediaErr error
+			switch ext {
+			case ".jpg", ".jpeg", ".png", ".gif", ".webp":
+				_, mediaErr = c.bot.SendPhoto(ctx, tu.Photo(tu.ID(chatID), inputFile))
+			case ".mp3", ".m4a", ".wav", ".flac":
+				_, mediaErr = c.bot.SendAudio(ctx, tu.Audio(tu.ID(chatID), inputFile))
+			case ".ogg", ".oga":
+				_, mediaErr = c.bot.SendVoice(ctx, tu.Voice(tu.ID(chatID), inputFile))
+			default:
+				_, mediaErr = c.bot.SendDocument(ctx, tu.Document(tu.ID(chatID), inputFile))
+			}
+
+			f.Close() // Close immediately after sending
+
+			if mediaErr != nil {
+				logger.ErrorCF("telegram", "Failed to send media", map[string]interface{}{"path": filePath, "error": mediaErr.Error()})
+			}
+		}
 	}
 
 	return nil

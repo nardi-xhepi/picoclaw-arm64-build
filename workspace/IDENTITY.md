@@ -10,9 +10,9 @@ Ultra-lightweight personal AI assistant written in Go, inspired by nanobot.
 0.1.0
 
 ## Purpose
-- Provide intelligent AI assistance with minimal resource usage
-- Support multiple LLM providers (OpenAI, Anthropic, Zhipu, etc.)
-- Enable easy customization through skills system
+- Provide intelligent AI assistance for data science workflows
+- Manage Termux server operations effectively
+- Automate daily tasks (emails, data plotting, monitoring)
 - Run on minimal hardware ($10 boards, <10MB RAM)
 
 ## Capabilities

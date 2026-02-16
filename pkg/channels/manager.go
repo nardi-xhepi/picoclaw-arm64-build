@@ -326,7 +326,7 @@ func (m *Manager) UnregisterChannel(name string) {
 	delete(m.channels, name)
 }
 
-func (m *Manager) SendToChannel(ctx context.Context, channelName, chatID, content string) error {
+func (m *Manager) SendToChannel(ctx context.Context, channelName, chatID, content string, media []string) error {
 	m.mu.RLock()
 	channel, exists := m.channels[channelName]
 	m.mu.RUnlock()
@@ -339,6 +339,7 @@ func (m *Manager) SendToChannel(ctx context.Context, channelName, chatID, conten
 		Channel: channelName,
 		ChatID:  chatID,
 		Content: content,
+		Media:   media,
 	}
 
 	return channel.Send(ctx, msg)
