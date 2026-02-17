@@ -5,36 +5,24 @@ description: Learn how to effectively use the browser tool to navigate and inter
 
 # Browser Automation Workflow
 
-When using the `browser` tool, follow this **Observe-Orient-Decide-Act** loop to avoid errors and "blind" interactions.
+## CRITICAL RULE: NAVIGATE FIRST
+**If the user provides a URL, your VERY FIRST action in the session MUST be `navigate`.**
+Do NOT call `get_html` or `screenshot` until you have successfully navigated to the target URL.
 
-## 1. Navigate
-Start by navigating to the target URL.
-```json
-{ "action": "navigate", "url": "https://example.com" }
-```
+## Correct Flow
 
-## 2. Observe (CRITICAL STEP)
-Do NOT guess selectors (like `#username`, `#login`). Always inspect the page first.
--   **Text-based**: use `get_html` to retrieve the page source.
--   **Visual**: use `screenshot` (if you can process images) to see the layout.
+1.  **Navigate** (Turn 1)
+    -   Action: `{"action": "navigate", "url": "..."}`
+    -   **STOP**. Wait for the tool output.
 
-```json
-{ "action": "get_html" }
-```
+2.  **Observe** (Turn 2)
+    -   Action: `{"action": "get_html"}`
+    -   **STOP**. Read the HTML to find the *actual* selectors (e.g., `input[name='username']`).
+    -   Do NOT guess `#username` or `#login`.
 
-## 3. Decide
-Analyze the HTML/Image to find the **exact** selectors.
--   Search for `input` tags to find `name`, `id`, or `class` attributes.
--   Search for `button` or `a` tags for login/submit actions.
--   *Example*: If you see `<input name="user_login_123" ...>`, use `input[name='user_login_123']`, not `#username`.
-
-## 4. Act
-Perform the action using the verified selector.
-
-```json
-{ "action": "type", "selector": "input[name='user_login_123']", "text": "myuser" }
-```
+3.  **Act** (Turn 3)
+    -   Action: `{"action": "type", "selector": "...", "text": "..."}`
 
 ## Troubleshooting
--   **"Context deadline exceeded"**: The element was not found within the timeout. Check if the selector is correct or if the page is still loading.
--   **"Node is not visible"**: The element is in the DOM but hidden. It might be behind a menu, requires scrolling, or you are targeting the wrong element (e.g. a hidden input instead of the visible one).
+-   **"Page is empty (about:blank)..."**: You forgot to navigate! Call `navigate` immediately.
+-   **"You must use 'get_html' or 'screenshot'..."**: You tried to click/type without observing. Call `get_html`.

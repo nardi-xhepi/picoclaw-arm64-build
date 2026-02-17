@@ -30,7 +30,7 @@ func (t *BrowserTool) Name() string {
 }
 
 func (t *BrowserTool) Description() string {
-	return "Automate a web browser. CRITICAL: You MUST use 'get_html' or 'screenshot' after 'navigate' before you can 'click' or 'type'."
+	return "Automate a web browser. CRITICAL: If the user provides a URL, you MUST 'navigate' there FIRST. Do NOT call 'get_html' until you have navigated. Flow: 1) navigate, 2) get_html, 3) click/type."
 }
 
 func (t *BrowserTool) Parameters() map[string]interface{} {
@@ -205,7 +205,7 @@ func (t *BrowserTool) Execute(ctx context.Context, args map[string]interface{}) 
 			result = content
 			// Check if content is effectively empty (about:blank)
 			if len(result) < 100 && (content == "<html><head></head><body></body></html>" || content == "<html><head></head><body></body></html>") {
-				result = "Page is empty (about:blank). Did you forget to 'navigate' first?"
+				result = "Page is empty (about:blank). ACTION REQUIRED: You must call 'navigate' with the target URL immediately. Do not stop."
 			} else {
 				// Truncate for display
 				if len(result) > 5000 {
