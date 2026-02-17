@@ -28,7 +28,7 @@ func (t *BrowserTool) Name() string {
 }
 
 func (t *BrowserTool) Description() string {
-	return "Automate a web browser to navigate, click, type, and extract data. Supports persistent sessions."
+	return "Automate a web browser. CRITICAL: Do NOT chain 'navigate' and 'click'/'type' in one turn. You MUST 1) 'navigate', 2) STOP and wait for result, 3) 'get_html' to find selectors, 4) 'click'/'type'."
 }
 
 func (t *BrowserTool) Parameters() map[string]interface{} {
