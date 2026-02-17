@@ -120,9 +120,19 @@ func (t *BrowserTool) Execute(ctx context.Context, args map[string]interface{}) 
 		if !ok {
 			return ErrorResult("selector is required for click action")
 		}
-		err = chromedp.Run(ctx,
-			chromedp.Click(selector, chromedp.NodeVisible),
-		)
+		// Default to waiting for visible, unless skip_wait is true
+		waitVisible := true
+		if skip, ok := args["skip_wait"].(bool); ok && skip {
+			waitVisible = false
+		}
+
+		actions := []chromedp.Action{}
+		if waitVisible {
+			actions = append(actions, chromedp.WaitVisible(selector))
+		}
+		actions = append(actions, chromedp.Click(selector, chromedp.NodeVisible))
+
+		err = chromedp.Run(ctx, actions...)
 		if err == nil {
 			result = fmt.Sprintf("Clicked element %s", selector)
 		}
@@ -136,9 +146,13 @@ func (t *BrowserTool) Execute(ctx context.Context, args map[string]interface{}) 
 		if !ok {
 			return ErrorResult("text is required for type action")
 		}
-		err = chromedp.Run(ctx,
+
+		actions := []chromedp.Action{
+			chromedp.WaitVisible(selector),
 			chromedp.SendKeys(selector, text, chromedp.NodeVisible),
-		)
+		}
+
+		err = chromedp.Run(ctx, actions...)
 		if err == nil {
 			result = fmt.Sprintf("Typed '%s' into %s", text, selector)
 		}
@@ -197,7 +211,13 @@ func (t *BrowserTool) Execute(ctx context.Context, args map[string]interface{}) 
 	}
 
 	if err != nil {
-		return ErrorResult(fmt.Sprintf("Browser action failed: %v", err))
+		// Attempt to get current URL and Title for context
+		var currentURL, title string
+		chromedp.Run(ctx,
+			chromedp.Location(&currentURL),
+			chromedp.Title(&title),
+		)
+		return ErrorResult(fmt.Sprintf("Browser action failed: %v\nContext: %s (%s)", err, title, currentURL))
 	}
 
 	return &ToolResult{
