@@ -18,6 +18,10 @@ termux-camera-photo -c [0=back, 1=front] output.jpg
 ```
 Example: `termux-camera-photo -c 0 my_photo.jpg`
 
+**Workflow: Take and Send**
+1. Take photo: `termux-camera-photo -c 0 selfie.jpg`
+2. Send it: Use the `message` tool with `media=["/data/data/com.termux/files/home/picoclaw/selfie.jpg"]` (or relative path if in workspace).
+
 ### Battery
 **Get status**:
 ```bash
@@ -62,6 +66,18 @@ termux-clipboard-set "text to copy"
 ```bash
 termux-notification --title "My Title" --content "My Message"
 ```
+
+### Volume Control
+**Get volume info**:
+```bash
+termux-volume
+```
+**Set volume**:
+```bash
+termux-volume [stream] [volume_level]
+```
+Streams: `call`, `system`, `ring`, `music`, `alarm`, `notification`
+Example: `termux-volume music 10`
 
 ### Text-to-Speech (TTS)
 **Speak text**:

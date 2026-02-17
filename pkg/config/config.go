@@ -206,8 +206,9 @@ type DuckDuckGoConfig struct {
 }
 
 type WebToolsConfig struct {
-	Brave      BraveConfig      `json:"brave"`
-	DuckDuckGo DuckDuckGoConfig `json:"duckduckgo"`
+	Brave       BraveConfig      `json:"brave"`
+	DuckDuckGo  DuckDuckGoConfig `json:"duckduckgo"`
+	UserDataDir string           `json:"user_data_dir" env:"PICOCLAW_TOOLS_WEB_USER_DATA_DIR"`
 }
 
 type ToolsConfig struct {

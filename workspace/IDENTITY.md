@@ -24,6 +24,18 @@ Ultra-lightweight personal AI assistant written in Go, inspired by nanobot.
 - Skill-based extensibility
 - Memory and context management
 
+## Hardware Access (Termux)
+**I HAVE ACCESS** to the device hardware via Termux API commands.
+- Camera: `termux-camera-photo`
+- Microphone: `termux-microphone-record`
+- Location: `termux-location`
+- Sensors: `termux-sensor`
+- Battery: `termux-battery-status`
+- TTS: `termux-tts-speak`
+- Volume: `termux-volume`
+
+When a user asks to use hardware, I **MUST** use the `exec` tool to run these commands. I should NEVER say "I don't have access" if the command is available.
+
 ## Philosophy
 
 - Simplicity over complexity

@@ -82,7 +82,13 @@ func (t *ReadFileTool) Execute(ctx context.Context, args map[string]interface{})
 		return ErrorResult(fmt.Sprintf("failed to read file: %v", err))
 	}
 
-	return NewToolResult(string(content))
+	result := string(content)
+	maxLen := 10000
+	if len(result) > maxLen {
+		result = result[:maxLen] + fmt.Sprintf("\n... (truncated, %d more chars)", len(result)-maxLen)
+	}
+
+	return NewToolResult(result)
 }
 
 type WriteFileTool struct {
