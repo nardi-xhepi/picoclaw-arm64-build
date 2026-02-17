@@ -192,7 +192,7 @@ func (t *BrowserTool) Execute(ctx context.Context, args map[string]interface{}) 
 	case "get_html":
 		var content string
 		err = chromedp.Run(ctx,
-			chromedp.OuterHTML("html", &content),
+			chromedp.Evaluate(`document.documentElement.outerHTML`, &content),
 		)
 		if err == nil {
 			result = content
