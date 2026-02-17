@@ -52,6 +52,10 @@ func (t *BrowserTool) Parameters() map[string]interface{} {
 				"type":        "string",
 				"description": "Text to type (for action=type)",
 			},
+			"skip_wait": map[string]interface{}{
+				"type":        "boolean",
+				"description": "If true, skip waiting for element visibility before interaction (default: false)",
+			},
 			"script": map[string]interface{}{
 				"type":        "string",
 				"description": "JavaScript to evaluate (for action=evaluate)",
