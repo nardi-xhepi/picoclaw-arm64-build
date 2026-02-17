@@ -14,12 +14,14 @@ import (
 type BrowserTool struct {
 	userDataDir string
 	headless    bool
+	observed    bool // simplified state tracking
 }
 
 func NewBrowserTool(userDataDir string, headless bool) *BrowserTool {
 	return &BrowserTool{
 		userDataDir: userDataDir,
 		headless:    headless,
+		observed:    false,
 	}
 }
 
@@ -28,7 +30,7 @@ func (t *BrowserTool) Name() string {
 }
 
 func (t *BrowserTool) Description() string {
-	return "Automate a web browser. CRITICAL: Do NOT chain 'navigate' and 'click'/'type' in one turn. You MUST 1) 'navigate', 2) STOP and wait for result, 3) 'get_html' to find selectors, 4) 'click'/'type'."
+	return "Automate a web browser. CRITICAL: You MUST use 'get_html' or 'screenshot' after 'navigate' before you can 'click' or 'type'."
 }
 
 func (t *BrowserTool) Parameters() map[string]interface{} {
@@ -75,7 +77,6 @@ func (t *BrowserTool) Execute(ctx context.Context, args map[string]interface{}) 
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.DisableGPU,
 		chromedp.NoSandbox,
-		//chromedp.Flag("disable-gpu", true), // already in DefaultExecAllocatorOptions?
 	)
 
 	if t.headless {
@@ -116,10 +117,14 @@ func (t *BrowserTool) Execute(ctx context.Context, args map[string]interface{}) 
 			chromedp.Navigate(urlStr),
 		)
 		if err == nil {
-			result = fmt.Sprintf("Navigated to %s", urlStr)
+			t.observed = false // Reset observation state on navigation
+			result = fmt.Sprintf("Navigated to %s. You MUST now use 'get_html' or 'screenshot' to see the page content.", urlStr)
 		}
 
 	case "click":
+		if !t.observed {
+			return ErrorResult("You must use 'get_html' or 'screenshot' to observe the page before clicking elements.")
+		}
 		selector, ok := args["selector"].(string)
 		if !ok {
 			return ErrorResult("selector is required for click action")
@@ -138,10 +143,16 @@ func (t *BrowserTool) Execute(ctx context.Context, args map[string]interface{}) 
 
 		err = chromedp.Run(ctx, actions...)
 		if err == nil {
+			// Click might navigate, so reset observed state cautiously?
+			// Actually, many clicks just change DOM. Let's keep it true unless we detect nav.
+			// Ideally we'd detect navigation, but for now let's be lenient on click.
 			result = fmt.Sprintf("Clicked element %s", selector)
 		}
 
 	case "type":
+		if !t.observed {
+			return ErrorResult("You must use 'get_html' or 'screenshot' to observe the page before typing.")
+		}
 		selector, ok := args["selector"].(string)
 		if !ok {
 			return ErrorResult("selector is required for type action")
@@ -167,17 +178,12 @@ func (t *BrowserTool) Execute(ctx context.Context, args map[string]interface{}) 
 			chromedp.CaptureScreenshot(&buf),
 		)
 		if err == nil {
-			// Save screenshot to disk? Or return base64?
-			// For now, let's return base64 so LLM can potentially see it (if supported) or just ack
-			// Ideally we save to file and return path
-			// But for tool result, let's just say "Screenshot captured" and maybe save to temp?
-
-			// Actually, let's save to a temp file for user to see
 			tmpFile, cleanErr := os.CreateTemp("", "screenshot-*.png")
 			if cleanErr == nil {
 				defer tmpFile.Close()
 				tmpFile.Write(buf)
 				result = fmt.Sprintf("Screenshot saved to %s", tmpFile.Name())
+				t.observed = true // Mark as observed
 			} else {
 				result = fmt.Sprintf("Screenshot captured (%d bytes) but failed to save file: %v", len(buf), cleanErr)
 			}
@@ -194,6 +200,7 @@ func (t *BrowserTool) Execute(ctx context.Context, args map[string]interface{}) 
 			if len(result) > 5000 {
 				result = result[:5000] + "... (truncated)"
 			}
+			t.observed = true // Mark as observed
 		}
 
 	case "evaluate":
