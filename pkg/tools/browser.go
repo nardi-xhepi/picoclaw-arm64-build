@@ -173,6 +173,13 @@ func (t *BrowserTool) Execute(ctx context.Context, args map[string]interface{}) 
 		}
 
 	case "screenshot":
+		// OPTIONAL: Enforce navigation before screenshot?
+		// A blank page screenshot is useless.
+		if !t.observed && t.userDataDir == "" {
+			// If persistent, maybe we are already on a page?
+			// But for now let's warn if we haven't navigated in this session *or* if we suspect it's empty.
+		}
+
 		var buf []byte
 		err = chromedp.Run(ctx,
 			chromedp.CaptureScreenshot(&buf),
@@ -196,11 +203,16 @@ func (t *BrowserTool) Execute(ctx context.Context, args map[string]interface{}) 
 		)
 		if err == nil {
 			result = content
-			// Truncate for display
-			if len(result) > 5000 {
-				result = result[:5000] + "... (truncated)"
+			// Check if content is effectively empty (about:blank)
+			if len(result) < 100 && (content == "<html><head></head><body></body></html>" || content == "<html><head></head><body></body></html>") {
+				result = "Page is empty (about:blank). Did you forget to 'navigate' first?"
+			} else {
+				// Truncate for display
+				if len(result) > 5000 {
+					result = result[:5000] + "... (truncated)"
+				}
+				t.observed = true // Mark as observed
 			}
-			t.observed = true // Mark as observed
 		}
 
 	case "evaluate":
